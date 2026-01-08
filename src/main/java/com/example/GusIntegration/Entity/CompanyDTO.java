@@ -1,6 +1,6 @@
-package com.example.demo.Entity;
+package com.example.GusIntegration.Entity;
 
-public class CompanyDto {
+public class CompanyDTO {
     public String regon;
     public String nip;
     public String nazwa;
@@ -10,6 +10,5 @@ public class CompanyDto {
     public String miejscowosc;
     public String ulica;
     public String nrNieruchomosci;
-    public String krs;
     public String kodPocztowy;
 }

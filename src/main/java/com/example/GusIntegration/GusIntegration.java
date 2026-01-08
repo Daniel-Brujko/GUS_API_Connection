@@ -1,13 +1,13 @@
-package com.example.demo;
+package com.example.GusIntegration;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class DemoApplication {
+public class GusIntegration {
 
     public static void main(String[] args) {
-        SpringApplication.run(DemoApplication.class, args);
+        SpringApplication.run(GusIntegration.class, args);
     }
 
 }

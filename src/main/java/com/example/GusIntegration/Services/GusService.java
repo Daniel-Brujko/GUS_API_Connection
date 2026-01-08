@@ -1,6 +1,12 @@
-package com.example.demo;
+package com.example.GusIntegration.Services;
 
-import com.example.demo.Entity.CompanyDto;
+import com.example.GusIntegration.Entity.CompanyDTO;
+import org.json.JSONObject;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
@@ -18,26 +24,33 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
-public class GetDataFromGUS {
+@Service
+public class GusService {
 
-    public static String getAlldata(String type, String registryNumber) {
+    public ResponseEntity<?> getAlldata(String type, String registryNumber) {
+        final HttpHeaders httpHeaders= new HttpHeaders();
+        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
         String data = "";
         String SessionId = "";
+        type = type.substring(0, 1).toUpperCase() + type.substring(1).toLowerCase();
         try {
-            SessionId = GetDataFromGUS.loginGus();
+            SessionId = loginGus();
 
-            if (SessionId != null) {
-                GetDataFromGUS.getData(SessionId, type, registryNumber);
+            if (SessionId != null && type != null && registryNumber != null) {
+                data = getData(SessionId,type, registryNumber);
+
+                return new ResponseEntity<String>(data, httpHeaders, HttpStatus.OK);
+            }else{
+                Exception exception = new Exception("Invalid Data");
+                throw exception;
             }
 
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            return ResponseEntity.notFound().build();
         }
-
-        return data;
     }
 
-    public static String loginGus() throws URISyntaxException {
+    public String loginGus() throws URISyntaxException {
         String SessionId = null;
 
         HttpClient client = HttpClient.newHttpClient();
@@ -84,32 +97,32 @@ public class GetDataFromGUS {
         }
     }
 
-    public static String getData(String SessionId, String type, String registryNumber) throws URISyntaxException {
+    public String getData(String SessionId, String type, String registryNumber) throws URISyntaxException {
 
         HttpClient client = HttpClient.newHttpClient();
         String dynamicTag = "<dat:" + type + ">" + registryNumber + "</dat:" + type + ">";
 
         String soapBody = """
-        <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"
-                       xmlns:ns="http://CIS/BIR/PUBL/2014/07"
-                       xmlns:dat="http://CIS/BIR/PUBL/2014/07/DataContract">
-            <soap:Header xmlns:wsa="http://www.w3.org/2005/08/addressing">
-                <wsa:Action>
-                    http://CIS/BIR/PUBL/2014/07/IUslugaBIRzewnPubl/DaneSzukajPodmioty
-                </wsa:Action>
-                <wsa:To>
-                    https://wyszukiwarkaregontest.stat.gov.pl/wsBIR/UslugaBIRzewnPubl.svc
-                </wsa:To>
-            </soap:Header>
-            <soap:Body>
-                <ns:DaneSzukajPodmioty>
-                    <ns:pParametryWyszukiwania>
-                        %s
-                    </ns:pParametryWyszukiwania>
-                </ns:DaneSzukajPodmioty>
-            </soap:Body>
-        </soap:Envelope>
-        """.formatted(dynamicTag); // <- działa tylko tutaj na String
+                <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"
+                               xmlns:ns="http://CIS/BIR/PUBL/2014/07"
+                               xmlns:dat="http://CIS/BIR/PUBL/2014/07/DataContract">
+                    <soap:Header xmlns:wsa="http://www.w3.org/2005/08/addressing">
+                        <wsa:Action>
+                            http://CIS/BIR/PUBL/2014/07/IUslugaBIRzewnPubl/DaneSzukajPodmioty
+                        </wsa:Action>
+                        <wsa:To>
+                            https://wyszukiwarkaregontest.stat.gov.pl/wsBIR/UslugaBIRzewnPubl.svc
+                        </wsa:To>
+                    </soap:Header>
+                    <soap:Body>
+                        <ns:DaneSzukajPodmioty>
+                            <ns:pParametryWyszukiwania>
+                                %s
+                            </ns:pParametryWyszukiwania>
+                        </ns:DaneSzukajPodmioty>
+                    </soap:Body>
+                </soap:Envelope>
+                """.formatted(dynamicTag);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(new URI("https://wyszukiwarkaregontest.stat.gov.pl/wsBIR/UslugaBIRzewnPubl.svc"))
@@ -149,7 +162,7 @@ public class GetDataFromGUS {
 
             Element dane = (Element) doc.getElementsByTagName("dane").item(0);
 
-            CompanyDto dto = new CompanyDto();
+            CompanyDTO dto = new CompanyDTO();
             dto.regon = getValue(dane, "Regon");
             dto.nip = getValue(dane, "Nip");
             dto.nazwa = getValue(dane, "Nazwa");
@@ -160,7 +173,6 @@ public class GetDataFromGUS {
             dto.ulica = getValue(dane, "Ulica");
             dto.nrNieruchomosci = getValue(dane, "NrNieruchomosci");
             dto.kodPocztowy = getValue(dane, "KodPocztowy");
-            dto.krs = getValue(dane, "Krs");
 
             ObjectMapper mapper = new ObjectMapper();
             String json = mapper.writerWithDefaultPrettyPrinter()

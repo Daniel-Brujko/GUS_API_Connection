@@ -1,6 +1,6 @@
 package com.example.demo;
 
-import com.example.demo.model.CompanyDto;
+import com.example.demo.Entity.CompanyDto;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;

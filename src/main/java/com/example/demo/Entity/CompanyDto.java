@@ -1,4 +1,4 @@
-package com.example.demo.model;
+package com.example.demo.Entity;
 
 public class CompanyDto {
     public String regon;
